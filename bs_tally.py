@@ -23,10 +23,7 @@ authenticator = stauth.Authenticate(
     config["cookie"]["expiry_days"],
 )
 
-name, auth_status, username = authenticator.login(
-    "Login",
-    location="main"
-)
+name, auth_status, username = authenticator.login("Login", "main")
 
 if auth_status is False:
     st.error("Invalid username or password")
@@ -36,7 +33,7 @@ if auth_status is None:
     st.warning("Please enter your credentials")
     st.stop()
 
-authenticator.logout("Logout", location="sidebar")
+authenticator.logout("Logout", "sidebar")
 st.sidebar.success(f"Logged in as {name}")
 
 # =========================
@@ -204,5 +201,6 @@ if uploaded_file:
             file_name="bank_vouchers.xml",
             mime="application/xml"
         )
+
 
 
