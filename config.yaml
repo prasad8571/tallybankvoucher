@@ -1,0 +1,15 @@
+credentials:
+  usernames:
+    prasad:
+      email: prasad@yourfirm.com
+      name: Prasad Reddy
+      password: "admin#1234"
+
+cookie:
+  expiry_days: 30
+  key: bank2tally_auth
+  name: bank2tally_cookie
+
+preauthorized:
+  emails:
+    - prasad@yourfirm.com
