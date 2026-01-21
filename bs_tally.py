@@ -212,8 +212,9 @@ if submit_feedback:
             suggestions=feedback_text
         )
         
-        st.session_state.feedback_submitted = True
-        st.success("Thank you! Feedback submitted successfully.")
+    st.session_state.feedback_submitted = True
+    st.success("Thank you! Feedback submitted successfully.")
+
 
 
 
