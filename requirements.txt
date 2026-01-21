@@ -4,4 +4,6 @@ bcrypt
 pandas
 openpyxl
 lxml
+gspread
+google-auth
 
