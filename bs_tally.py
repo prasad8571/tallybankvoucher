@@ -5,37 +5,8 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 from io import BytesIO
 
-#========================
-#LOGIN CODE
-#========================
-
-import streamlit_authenticator as stauth
-import yaml
-from yaml.loader import SafeLoader
-
-with open("config.yaml") as file:
-    config = yaml.load(file, Loader=SafeLoader)
-
-authenticator = stauth.Authenticate(
-    config["credentials"],
-    config["cookie"]["name"],
-    config["cookie"]["key"],
-    config["cookie"]["expiry_days"],
-)
-
-name, auth_status, username = authenticator.login("Login", "main")
-
-if auth_status is False:
-    st.error("Invalid username or password")
-    st.stop()
-
-if auth_status is None:
-    st.warning("Please enter your credentials")
-    st.stop()
-
-authenticator.logout("Logout", "sidebar")
-st.sidebar.success(f"Logged in as {name}")
-
+if "feedback_submitted" not in st.session_state:
+    st.session_state.feedback_submitted = False
 # =========================
 # CONFIGURATION (Backend)
 # =========================
@@ -168,8 +139,8 @@ st.download_button(
 # --- Bank Ledger Input ---
 st.subheader("2. Bank Ledger Configuration")
 bank_ledger_name = st.text_input(
-    "Enter Bank Ledger Name (Must match Tally exactly)",
-    value="HDFC Bank"
+    "Enter Bank Ledger Name as per Tally",
+    value="HDFC"
 )
 
 # --- File Upload ---
@@ -194,14 +165,64 @@ if uploaded_file:
     st.subheader("4. Generate Tally XML")
     if st.button("Generate Tally XML"):
         xml_data = build_tally_xml(df, bank_ledger_name)
-
-        st.download_button(
+    #-- download button ---
+        if st.session_state.feedback_submitted:
+            st.download_button(
             label="Download Tally XML",
             data=xml_data,
             file_name="bank_vouchers.xml",
             mime="application/xml"
-        )
+            )
+        else:
+            st.warning("Please submit feedback to enable XML download.")
 
+#--- Feedback form ---
+        st.subheader("Feedback (Required before download)")
+
+with st.form("feedback_form"):
+    feedback_email = st.text_input(
+        "Email ID *",
+        placeholder="yourname@company.com"
+    )
+
+    feedback_text = st.text_area(
+        "Suggestions / Feedback ",
+        placeholder="Please share your experience or suggestions",
+        height=120
+    )
+
+    submit_feedback = st.form_submit_button("Submit Feedback")
+
+    #--- Save Feedback ---
+    import re
+from datetime import datetime
+import os
+import pandas as pd
+
+if submit_feedback:
+    if not feedback_email or not feedback_text:
+        st.error("Email ID and Suggestions are mandatory")
+    elif not re.match(r"[^@]+@[^@]+\.[^@]+", feedback_email):
+        st.error("Please enter a valid email ID")
+    else:
+        feedback_row = {
+            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Email": feedback_email,
+            "Suggestions": feedback_text
+        }
+
+        feedback_file = "feedback_log.csv"
+
+        if os.path.exists(feedback_file):
+            df_old = pd.read_csv(feedback_file)
+            df_new = pd.concat([df_old, pd.DataFrame([feedback_row])])
+        else:
+            df_new = pd.DataFrame([feedback_row])
+
+        df_new.to_csv(feedback_file, index=False)
+
+        st.session_state.feedback_submitted = True
+        st.success("Thank you! Feedback submitted successfully.")
 
 
 
