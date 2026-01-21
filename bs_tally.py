@@ -4,11 +4,29 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 from io import BytesIO
-from gsheet_utils import save_feedback_to_gsheet
+import gspread
+from google.oauth2.service_account import Credentials
+from datetime import datetime
 
 
 if "feedback_submitted" not in st.session_state:
     st.session_state.feedback_submitted = False
+    
+def save_feedback_to_gsheet(email, suggestions):
+    scope = ["https://www.googleapis.com/auth/spreadsheets"]
+    creds = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"],
+        scopes=scope
+    )
+
+    client = gspread.authorize(creds)
+    sheet = client.open("Bank2Tally_Feedback").sheet1
+
+    sheet.append_row([
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        email,
+        suggestions
+    ])
 # =========================
 # CONFIGURATION (Backend)
 # =========================
@@ -214,6 +232,7 @@ if submit_feedback:
         
     st.session_state.feedback_submitted = True
     st.success("Thank you! Feedback submitted successfully.")
+
 
 
 
