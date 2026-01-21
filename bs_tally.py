@@ -4,6 +4,8 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 from io import BytesIO
+from gsheet_utils import save_feedback_to_gsheet
+
 
 if "feedback_submitted" not in st.session_state:
     st.session_state.feedback_submitted = False
@@ -205,24 +207,14 @@ if submit_feedback:
     elif not re.match(r"[^@]+@[^@]+\.[^@]+", feedback_email):
         st.error("Please enter a valid email ID")
     else:
-        feedback_row = {
-            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Email": feedback_email,
-            "Suggestions": feedback_text
-        }
-
-        feedback_file = "feedback_log.csv"
-
-        if os.path.exists(feedback_file):
-            df_old = pd.read_csv(feedback_file)
-            df_new = pd.concat([df_old, pd.DataFrame([feedback_row])])
-        else:
-            df_new = pd.DataFrame([feedback_row])
-
-        df_new.to_csv(feedback_file, index=False)
-
+       save_feedback_to_gsheet(
+            email=feedback_email,
+            suggestions=feedback_text
+        )
+        
         st.session_state.feedback_submitted = True
         st.success("Thank you! Feedback submitted successfully.")
+
 
 
 
