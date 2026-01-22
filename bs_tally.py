@@ -4,29 +4,14 @@ import pandas as pd
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 from io import BytesIO
-import gspread
-from google.oauth2.service_account import Credentials
+import smtplib
+from email.mime.text import MIMEText
 from datetime import datetime
-st.write(st.secrets["gcp_service_account"].keys())
+
 
 if "feedback_submitted" not in st.session_state:
     st.session_state.feedback_submitted = False
     
-def save_feedback_to_gsheet(email, suggestions):
-    scope = ["https://www.googleapis.com/auth/spreadsheets"]
-    creds = Credentials.from_service_account_info(
-        st.secrets["gcp_service_account"],
-        scopes=scope
-    )
-
-    client = gspread.authorize(creds)
-    sheet = client.open("Bank2Tally_Feedback").sheet1
-
-    sheet.append_row([
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        email,
-        suggestions
-    ])
 # =========================
 # CONFIGURATION (Backend)
 # =========================
@@ -139,8 +124,29 @@ def generate_template():
     template_df.to_excel(buffer, index=False)
     buffer.seek(0)
     return buffer
+#=========Email Helper function===
+def send_feedback_email(user_email, feedback):
+    body = f"""
+New Feedback Received
 
+Submitted At: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+User Email: {user_email}
 
+Feedback:
+{feedback}
+"""
+
+    msg = MIMEText(body)
+    msg["Subject"] = "Bank2Tally – User Feedback"
+    msg["From"] = st.secrets["smtp"]["from_email"]
+    msg["To"] = st.secrets["smtp"]["to_email"]
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(
+            st.secrets["smtp"]["from_email"],
+            st.secrets["smtp"]["app_password"]
+        )
+        server.send_message(msg)
 # =========================
 # STREAMLIT UI
 # =========================
@@ -213,11 +219,9 @@ with st.form("feedback_form"):
 
     submit_feedback = st.form_submit_button("Submit Feedback")
 
-    #--- Save Feedback ---
+    #--- send email ---
     import re
 from datetime import datetime
-import os
-import pandas as pd
 
 if submit_feedback:
     if not feedback_email or not feedback_text:
@@ -225,13 +229,14 @@ if submit_feedback:
     elif not re.match(r"[^@]+@[^@]+\.[^@]+", feedback_email):
         st.error("Please enter a valid email ID")
     else:
-       save_feedback_to_gsheet(
-            email=feedback_email,
-            suggestions=feedback_text
+       send_feedback_email(
+            user_email=feedback_email,
+            feedback=feedback_text
         )
         
     st.session_state.feedback_submitted = True
     st.success("Thank you! Feedback submitted successfully.")
+
 
 
 
