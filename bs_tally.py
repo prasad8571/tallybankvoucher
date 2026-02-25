@@ -235,7 +235,8 @@ if submit_feedback:
         )
         
     st.session_state.feedback_submitted = True
-    st.success("Thank you! Feedback submitted successfully.")
+    st.success("Thank you! Feedback submitted successfully, click Generate Tally XML button.")
+
 
 
 
